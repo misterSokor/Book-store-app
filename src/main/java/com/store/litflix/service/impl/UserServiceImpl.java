@@ -10,15 +10,14 @@ import com.store.litflix.model.User;
 import com.store.litflix.repository.roles.RoleRepository;
 import com.store.litflix.repository.user.UserRepository;
 import com.store.litflix.service.UserService;
+import java.util.HashSet;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
@@ -26,8 +25,8 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
 
     @Override
-    public UserResponseDto registerUser(
-            UserRegistrationRequestDto requestDto) throws RegistrationException {
+    public UserResponseDto registerUser(UserRegistrationRequestDto requestDto)
+            throws RegistrationException {
         if (userRepository.existsByEmail(requestDto.getEmail())) {
             throw new RegistrationException(
                     "User with email " + requestDto.getEmail() + " already exists");
@@ -37,9 +36,12 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(requestDto.getPassword()));
 
         Role userRole = roleRepository.findByRoleName(RoleName.ROLE_USER);
-        user.setRoles(Set.of(userRole));
+        Set<Role> roles = new HashSet<>();
+        roles.add(userRole);
+        user.setRoles(roles);
 
-        userRepository.save(user);
-        return userMapper.toUserResponse(user);
+        User savedUser = userRepository.save(user);
+
+        return userMapper.toUserResponse(savedUser);
     }
 }
