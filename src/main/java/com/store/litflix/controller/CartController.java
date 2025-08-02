@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/cart")
 @Tag(name = "Shopping Cart", description = "Operations related to the shopping cart")
 public class CartController {
-
     private final CartService cartService;
 
     @Operation(
@@ -33,9 +33,11 @@ public class CartController {
                           + " If the book already exists, it increases the quantity."
     )
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ShoppingCartResponseDto addBookToCart(
-            @RequestBody @Valid CartItemRequestDto request) {
-        return cartService.addBookToCart(request);
+            @RequestBody @Valid CartItemRequestDto request, Authentication authentication) {
+        Long extractedUserId = extractUserId(authentication);
+        return cartService.addBookToCart(request, extractedUserId);
     }
 
     @Operation(
@@ -44,8 +46,9 @@ public class CartController {
                           + " with all items and quantities"
     )
     @GetMapping
-    public ShoppingCartResponseDto getCartInfo() {
-        return cartService.getCartInfo();
+    public ShoppingCartResponseDto getCartInfo(Authentication authentication) {
+        Long extractedUserId = extractUserId(authentication);
+        return cartService.getCartInfo(extractedUserId);
     }
 
     @Operation(
@@ -55,9 +58,13 @@ public class CartController {
     @PutMapping("/cart-items/{cartItemId}")
     public ShoppingCartResponseDto updateCartItemQuantity(
             @PathVariable Long cartItemId,
-            @RequestBody @Valid UpdateCartItemDto requestDto
+            @RequestBody @Valid UpdateCartItemDto requestDto,
+            Authentication authentication
     ) {
-        return cartService.updateCartItemQuantity(cartItemId, requestDto.getQuantity());
+        Long extractedUserId = extractUserId(authentication);
+        return cartService.updateCartItemQuantity(cartItemId,
+                requestDto.getQuantity(),
+                extractedUserId);
     }
 
     @Operation(
@@ -67,7 +74,13 @@ public class CartController {
     )
     @DeleteMapping("/cart-items/{cartItemId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void removeCartItem(@PathVariable Long cartItemId) {
-        cartService.removeCartItem(cartItemId);
+    public void removeCartItem(@PathVariable Long cartItemId,
+                               Authentication authentication) {
+        Long extractedUser = extractUserId(authentication);
+        cartService.removeCartItem(cartItemId, extractedUser);
+    }
+
+    private Long extractUserId(Authentication authentication) {
+        return Long.parseLong(authentication.getName());
     }
 }
