@@ -3,6 +3,7 @@ package com.store.litflix.controller;
 import com.store.litflix.dto.cart.CartItemRequestDto;
 import com.store.litflix.dto.cart.ShoppingCartResponseDto;
 import com.store.litflix.dto.cart.UpdateCartItemDto;
+import com.store.litflix.model.User;
 import com.store.litflix.service.CartService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -81,6 +82,8 @@ public class CartController {
     }
 
     private Long extractUserId(Authentication authentication) {
-        return Long.parseLong(authentication.getName());
+        System.out.println("Authentication Name: " + authentication.getName());
+        //        return Long.parseLong(authentication.getName());
+        return ((User) authentication.getPrincipal()).getId();
     }
 }
